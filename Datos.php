@@ -1,5 +1,3 @@
-
-
 <?php
 require 'simple_html_dom.php';
 require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
@@ -9,7 +7,7 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
     function DF(){
 
       // IMPORTANTE: EN ALGUNOS CASOS NO ENTREGA TERMINO O BAJADA YA QUE NO ESTAN EN EL RSS
-
+      date_default_timezone_set("America/Santiago");
       $currentDate = date("Y-m-d");
       $mainURL="https://www.df.cl";
       $URL="https://www.df.cl/noticias/site/list/port/rss.xml";
@@ -17,7 +15,6 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
 
       $content = file_get_contents($URL);
       $x = new SimpleXmlElement($content);
-
       $data = array();
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
 
@@ -39,7 +36,7 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
     function elMostrador(){
 
       // IMPORTANTE: EN ALGUNOS CASOS NO ENTREGA TERMINO O BAJADA YA QUE NO ESTAN EN EL RSS
-
+      date_default_timezone_set("America/Santiago");
       $currentDate = date("Y-m-d");
       $mainURL="https://www.elmostrador.cl";
       $URL="http://www.elmostrador.cl/destacado/feed/";
@@ -70,27 +67,57 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
 
     function elPulso(){
 
-      //METODO EN PROCESO - LOS DATOS SE EXTRAEN SIN RSS
+//DATOS SE EXTRAEN SIN RSS
+// METODO QUE EXTRAE LOS LINK DE LA PAG "ULTIMA HORA" DE EL PULSO,
+// YA QUE NOS TRAE LAS NOTICIAS MAS ACTUALIZADAS PRESENTANDONOS EL LINK, TITULO ETC. PERO NO LA IMAGEN.
+// POR LO TANTO DEBEMOS IR A LA PAG DE LA NOTICIA PARA PODER OBTENERLA.
+      date_default_timezone_set("America/Santiago");
+      $currentDate = date('Y-m-d');
+      $URL="http://www.pulso.cl/ultima-hora/";
+      $html = file_get_html($URL); //OBTENEMOS EL HTML DE LA PAG
+      $posts = $html->find('div[class=article-container]');// OBTENEMOS EL DIV CON LA CLASE QUE IDENTIFICA A CADA NOTICIA
 
-      $mainURL="https://www.elpulso.cl";
-      $urlContent = file_get_contents($mainURL);
+      $linkList=array();//ARREGLO QUE NOS GUARDARÁ CADA LINK OBTENIDO POSTERIORMENTE
+      foreach ($posts as $post) { //RECORREMOS LOS POST PERO PRIMERAMENTE FILTRAREMOS LAS NOTICIAS POR FECHA ACTUAL
+        $date = $post->find('address span',1);//OBTENEMOS LA FECHA
+        if(!(empty($date))){//VALIDAMOS QUE LAS CLASES div[class=article-container] VENGAN FECHAS
+            $date = str_replace('/','-',$date->innertext);// CONVERTIMOS FECHA A INNERTEXT
+            $date = date('Y-m-d',strtotime($date));//CONVERTIMOS AL FORMATO QUE DEASEAMOS
+            if ($date === $currentDate) {// VALIDAMOS QUE LA FECHA DE LA NOTICIA SEA DE HOY
+              $link= $post->find('header h1 a',0)->attr['href'];//OBTENEMOS EL LINK
+              $linkList[] = $link;//LO ALMACENAMOS EN UN ARREGLO
 
-      $dom = new DOMDocument();
-      @$dom->loadHTML($urlContent);
-      $xpath = new DOMXPath($dom);
-      $hrefs = $xpath->evaluate("/html/body//a"); //hacemos un scanner de la pagina para encontrar etiquetas a.
-      $data=array();
+            }
+              // echo $currentDate.'</br>';
 
-      for($i = 0; $i < $hrefs->length; $i++){
-          $href = $hrefs->item($i);
-          $url = $href->getAttribute('href'); // esta varieble trae TODAS las url de la pag.
-          if (false !== strpos($url,'/'.$currentDate.'/') && !filter_var($mainURL.$url, FILTER_VALIDATE_URL) === false) {
-              $data[$i] = $mainURL.$url;
-            }//En esta condicion filtramos las url por fecha actual, ademas, validaremos si la url es valida.
+        }else{$date='';}
+
 
       }
-      $resultado = array_unique($data);// si entra alguna url repetida la eliminamos
-        print_r($resultado);
+       // print_r($linkList);
+       //YA TENEMOS TODOS LOS LINKS QUE NECESITAMOS, AHORA ENTRAMOS A CADA UNO DE ESOS LINKS
+       //PARA OBTENER FINALMENTE LA IMG, ADEMAS DE OBTENER TITULO,FECHA ETC
+       $data = array();
+       foreach ($linkList as $link) {
+          $gethtml = file_get_html($link);//CARGAMOS HTML SEGUN LINK QUE LLEGUE
+          $post = $gethtml->find('div[class=article-content]');//LA SECCION DE LA PAG DONDE ESTAN LOS DATOS
+
+          foreach ($post as $value) {//RECORREMOS LA SECCION
+            $title = $value->find('header h1',0);
+            if (!(empty($title))) {//VALIDAMOS QUE EXISTA Y SI ESTA ENTONCES EXTRAEMOS LOS DATOS
+              $img = $value->find('div[class=media] span img',0)->attr['src'];
+              $list = array('titulo'=>$title->innertext,'bajada'=>'','link'=>$link,'medio'=>'El Pulso',
+              'img'=>$img,'fecha'=>$currentDate,'termino'=>'');//FALTA TERMINO- NO TIENEN BAJADA
+              $data[] = $list;//GUARDAMOS EN UNA LISTA
+
+            }else{$title = '';}
+
+
+          }
+
+       }
+       return $data;
+
     }
 
 
