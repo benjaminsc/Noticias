@@ -6,7 +6,7 @@ class Conexion
 {
 	static protected  $host = 'localhost';
 	static protected  $user = 'root';
-	static protected  $db = 'Noticias';
+	static protected  $db = 'noticias';
 	static protected $pass = '';
 	public  static  $con;
 	//protected $db = 'localhost';

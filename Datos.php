@@ -23,27 +23,32 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
 
           $namespaces = $entry->getNameSpaces(true);
             $nodo = $entry->children($namespaces['df']);
-            $list =  array('titulo'=>$entry->title,'bajada'=>$entry->description,'link'=>$entry->link,
-                           'medio'=>'Diario Financiero','img'=>$mainURL.$nodo->foto600,'fecha'=>$currentDate,
-                           'termino'=>$nodo->tagnames);
+            $title = (string)$entry->title;
+            $description = (string)$entry->description;
+            $link = (string)$entry->link;
+            $media = "Diario Financiero";
+            $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
+                           'medio'=>$media,'img'=>"",'fecha'=>$currentDate,
+                           'termino'=>"");
 
             }
             $data[]= $list ;
       }
-       return json_encode($data);
+       echo json_encode($data);
     }
 
     function elMostrador(){
 
       // IMPORTANTE: EN ALGUNOS CASOS NO ENTREGA TERMINO O BAJADA YA QUE NO ESTAN EN EL RSS
+      //AL OBTENER EL VALOR DE CADA ATRIBUTO DEBEN PARSEARSE (SOLO EN RSS)
       date_default_timezone_set("America/Santiago");
       $currentDate = date("Y-m-d");
       $mainURL="https://www.elmostrador.cl";
       $URL="http://www.elmostrador.cl/destacado/feed/";
 
 
-      $content = file_get_contents($URL);
-      $x = new SimpleXmlElement($content);
+
+      $x = simplexml_load_file($URL);
 
       $data = array();
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
@@ -52,13 +57,16 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
 
         //FILTRAMOS LAS NOTICIAS POR FECHA ACTUAL Y QUE NO SEAN OPINIONES
       if($dateConvert === $currentDate && strcmp($entry->heading,"Opinión") !== 0 ){
+        $title = (string)$entry->title;
+        $description = (string)$entry->heading;
+        $link = (string)$entry->link;
+        $media = "El Mostrador";
 
-            $list =  array('titulo'=>$entry->title,'bajada'=>$entry->heading,'link'=>$entry->link,
-                           'medio'=>'El Mostrador','img'=>$entry->image,'fecha'=>$currentDate,
-                           'termino'=>"");// IMPORTANTE : FALTA OBTENER TERMINO
-
-            }
+            $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
+            'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>"");// IMPORTANTE : FALTA OBTENER TERMINO
             $data[]= $list ;
+            }
+
       }
        return json_encode($data);
     }
@@ -84,17 +92,83 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
             $link = $post->find('header h1 a',0);
             $url = $link->attr['href'];
             $title = $link->innertext;
-            $list= array('titulo'=>$title,'bajada'=>"",'link'=>$url,
-                        'medio'=>"El Pulso",'img'=>"",'fecha'=>$date);
+            $media= "El Pulso";
+            $list= array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
+            'img'=>"",'fecha'=>$date,'termino'=>"");
             $data[] = $list;
 
 
           }
         }else{$date = "";}
       }
-        return json_encode($data); //RETORNAMOS UN ARREGLO DE OBJETOS EN JSON
+        echo json_encode($data); //RETORNAMOS UN ARREGLO DE OBJETOS EN JSON
     }
 
+    function Santiago(){
+
+//DATOS SE EXTRAEN SIN RSS -
+      date_default_timezone_set("America/Santiago");
+      $currentDate = date('Y-m-d');
+      $URL="http://www.bolsadesantiago.com/noticias/Paginas/Datos-Burs%C3%A1tiles-disponibles-en-la-Tienda-Online-de-la-Bolsa-de-Santiago.aspx";
+      $html = file_get_html($URL); //OBTENEMOS EL HTML DE LA PAG
+      $posts = $html->find('div[class=fila bloqueNoticia]');// OBTENEMOS EL DIV CON LA CLASE QUE IDENTIFICA A CADA NOTICIA
+
+      $data=array();//ARREGLO QUE NOS GUARDARÁ CADA LINK OBTENIDO POSTERIORMENTE
+      foreach ($posts as $post) {
+        $link = $post->find('a',0);
+        $url = $link->attr['href'];
+        if ($url != "#" && !(empty($url))) {
+          $title = $post->find('a h3',0)->innertext;
+          $date = $post->find('a p span',0)->innertext;
+          $media = "Bolsa de Comercio-hechosEsenciales";
+          $list = array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
+          'img'=>"",'fecha'=>$date,'termino'=>"");
+          $data[]=$list;
+           // echo $date."</br>";
+        }else{$url = "";}
+
+
+      }
+
+       echo json_encode($data);
+
+    }
+
+
+function getTerms(){
+
+$query = "select idterminos,nombre from terminos where padre is not null ";
+$result=  Conexion::get_results($query);
+$title = "yo voy a jumbo comprar en ";
+$description = "jumdbo te da mas ";
+$aux = 0;
+if ($aux ===0) {
+  foreach ($result as  $value) {
+      $coincidencia = stristr($title, $value->nombre);
+      if ($coincidencia ==! false) {
+          $aux = 1;
+          echo "el termino es y vengo del 1:".$value->nombre;
+          break;
+
+        }
+    }
+}if ($aux ===0) {
+  foreach ($result as  $value) {
+      $coincidencia = stristr($description, $value->nombre);
+      if ($coincidencia ==! false) {
+          echo "el termino es :".$value->nombre;
+          break;
+
+        }
+    }
+}
+
+
+
+  }
+
+
+getTerms();
 
 
 
