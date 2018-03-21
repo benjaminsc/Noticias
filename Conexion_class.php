@@ -41,7 +41,7 @@ class Conexion
 		//$this->con->close();
 		return $data;
 	}
-	function get_row($query){
+	static function get_row($query){
 		if (self::getConexion()->multi_query($query))
 		{
 	 		/* almacenar primer juego de resultados */

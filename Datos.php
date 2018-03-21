@@ -12,27 +12,26 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
       $mainURL="https://www.df.cl";
       $URL="https://www.df.cl/noticias/site/list/port/rss.xml";
 
-
-      $content = file_get_contents($URL);
-      $x = new SimpleXmlElement($content);
+      $x = simplexml_load_file($URL);
       $data = array();
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
 
         //ELIMINAMOS LAS NOTICIAS CATEGORIAS TENDENCIAS Y OPINION, LUEGO LISTAMOS LOS DATOS
-      if(strcmp($entry->category,"Tendencias") !== 0 || strcmp($entry->category,"Opinión") !== 0){
+      if(strcmp($entry->category,"Tendencias") !== 0){
 
           $namespaces = $entry->getNameSpaces(true);
             $nodo = $entry->children($namespaces['df']);
             $title = (string)$entry->title;
             $description = (string)$entry->description;
             $link = (string)$entry->link;
+            $concept = getConcept($title,$description);
             $media = "Diario Financiero";
             $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
                            'medio'=>$media,'img'=>"",'fecha'=>$currentDate,
-                           'termino'=>"");
-
-            }
+                           'termino'=>$concept);
             $data[]= $list ;
+            }
+
       }
        echo json_encode($data);
     }
@@ -135,40 +134,56 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
     }
 
 
-function getTerms(){
-
-$query = "select idterminos,nombre from terminos where padre is not null ";
-$result=  Conexion::get_results($query);
-$title = "yo voy a jumbo comprar en ";
-$description = "jumdbo te da mas ";
+function getConcept($title,$description){
+//DEBEMOS ITERAR PARA ENCONTRAR A PADRE O A HIJO DENTRO DE LA NOTICIA (TITULO O DESCRIPCION)
+$query = "select nombre,padre from terminos;";
+$results=  Conexion::get_results($query);
 $aux = 0;
+$coincidencia="";
 if ($aux ===0) {
-  foreach ($result as  $value) {
+  foreach ($results as  $value) {
       $coincidencia = stristr($title, $value->nombre);
       if ($coincidencia ==! false) {
           $aux = 1;
-          echo "el termino es y vengo del 1:".$value->nombre;
-          break;
+          if (is_null($value->padre)) {
+            return $value->nombre;
+          }else{
+            $query = "select nombre from terminos where idterminos=".$value->padre.";";
+            $con = new Conexion();
+            $result = $con->get_row($query);
+            return $result->nombre;
+            break;
+          }
 
         }
     }
-}if ($aux ===0) {
-  foreach ($result as  $value) {
+}if ($aux ===0 && $description!="") {
+  foreach ($results as  $value) {
       $coincidencia = stristr($description, $value->nombre);
       if ($coincidencia ==! false) {
-          echo "el termino es :".$value->nombre;
+        $aux = 1;
+        if (is_null($value->padre)) {
+          return $value->nombre;
+        }else{
+          $query = "select nombre from terminos where idterminos=".$value->padre.";";
+          $con = new Conexion();
+          $result = $con->get_row($query);
+          return $result->nombre;
           break;
-
         }
+
+      }
     }
-}
-
-
-
+  }
+  if ($aux===0) {
+    return "Sin terminos";
   }
 
 
-getTerms();
+}
+
+
+DF();
 
 
 
