@@ -17,7 +17,7 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
         $date = $entry->pubDate;
         $dateConvert=date("Y-m-d", strtotime($date));
-          if($dateConvert==='2018-03-23'){
+          if($dateConvert===$currentDate){
             $title = (string)$entry->title;
             $description = (string)$entry->description;
             $concept = getConcept($title,$description);
@@ -25,16 +25,21 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
             $link = (string)$entry->link;
             $category = getCategory($concept);
             $media = "Diario Financiero";
-            $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
-                           'medio'=>$media,'img'=>"",'fecha'=>$currentDate,
-                           'termino'=>$concept,'categoria'=>$category);
-            $data[]= $list ;
+            $query = "INSERT INTO historicos(titulo,bajadaNoticia,link,medioOrigen,fecha,categoria,termino) VALUES ('$title','$description','$link','$media','$currentDate','$category','$concept')";
+            Conexion::ex_query($query);
+            // $con = new Conexion();
+            // $con->ex_query($query);
+            //
+            // $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
+            //                'medio'=>$media,'img'=>"",'fecha'=>$currentDate,
+            //                'termino'=>$concept,'categoria'=>$category);
+            // $data[]= $list ;
           }else{$concept="";}
 
         }
 
       }
-       echo json_encode($data); //LISTO PARA GUARDAR NOTICIA EN BD
+       // echo json_encode($data); //LISTO PARA GUARDAR NOTICIA EN BD
     }
 
     function elMostrador(){
@@ -58,16 +63,18 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
         if (!(is_null($concept))) {
           $link = (string)$entry->link;
           $category = getCategory($concept);
-          $media = "El Mostrador";
-          $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
-          'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
-          $data[]= $list ;
+          $query = "INSERT INTO historicos(titulo,bajadaNoticia,link,medioOrigen,fecha,categoria,termino) VALUES ('$title','$description','$link','$media','$currentDate','$category','$concept')";
+          Conexion::ex_query($query);
+          // $media = "El Mostrador";
+          // $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
+          // 'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+          // $data[]= $list ;
         }else{$concept="";}
 
         }
 
       }
-       echo json_encode($data);//LISTO PARA GUARDAR EN BD
+       // echo json_encode($data);//LISTO PARA GUARDAR EN BD
     }
 
 
@@ -89,7 +96,7 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
           if (!(empty($date))) {//VALIDAMOS SI LA FECHA EXISTE
             $date = str_replace('/','-',$date->innertext);
             $date = date('Y-m-d',strtotime($date)); //CONVERITMOS LA FECHA AL FORMATO DEASEADO
-            if ($date==='2018-03-24') {
+            if ($date===$currentDate) {
               $description = $post->find('p',0);
               if (!(empty($description))) {
                 $link = $post->find('header h1 a',0);
@@ -100,9 +107,11 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
                 if (!(is_null($concept))) {
                   $category= getCategory($concept);
                   $media = "El pulso";
-                  $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
-                  'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
-                  $data[]= $list ;
+                  $query = "INSERT INTO historicos(titulo,bajadaNoticia,link,medioOrigen,fecha,categoria,termino) VALUES ('$title','$description','$url','$media','$currentDate','$category','$concept')";
+                  Conexion::ex_query($query);
+                  // $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
+                  // 'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+                  // $data[]= $list ;
                 }
               }elseif(empty($description)){
                 $link = $post->find('header h1 a',0);
@@ -113,9 +122,11 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
                 if (!(is_null($concept))) {
                   $category= getCategory($concept);
                   $media = "El pulso";
-                  $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
-                  'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
-                  $data[]= $list ;
+                  $query = "INSERT INTO historicos(titulo,bajadaNoticia,link,medioOrigen,fecha,categoria,termino) VALUES ('$title','$description','$url','$media','$currentDate','$category','$concept')";
+                  Conexion::ex_query($query);
+                  // $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
+                  // 'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+                  // $data[]= $list ;
 
 
                 }
@@ -124,7 +135,7 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
           }else{$date="";}
         }
       }
-      echo json_encode($data);//LISTO PARA GUARDAR EN BD
+      // echo json_encode($data);//LISTO PARA GUARDAR EN BD
   }
 
     function Santiago(){
@@ -151,15 +162,17 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
                   if (!(is_null($concept))) {
                     $media = "Bolsa de Comercio-hechosEsenciales";
                     $category = getCategory($concept);
-                    $list = array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
-                    'img'=>"",'fecha'=>$currentDate,'termino'=>$concept);
-                    $data[]=$list;
+                    $query = "INSERT INTO historicos(titulo,bajadaNoticia,link,medioOrigen,fecha,categoria,termino) VALUES ('$title','$description','$url','$media','$currentDate','$category','$concept')";
+                    Conexion::ex_query($query);
+                    // $list = array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
+                    // 'img'=>"",'fecha'=>$currentDate,'termino'=>$concept);
+                    // $data[]=$list;
 
                   }
                 }
               }else{$url = "";}
             }
-              echo json_encode($data); //LISTO PARA GUARDAR EN BD
+              // echo json_encode($data); //LISTO PARA GUARDAR EN BD
       }
 
 

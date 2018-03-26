@@ -13,6 +13,7 @@ class Conexion
 	public static function getConexion(){
 		if(is_null(self::$con)){
 			self::$con = new mysqli(self::$host, self::$user, self::$pass, self::$db);
+			mysqli_set_charset(self::$con,"utf8");
 			if (self::$con->connect_error) {
 		  	  die('Error de Conexión: ' .self::$con->connect_errno);
 			}
@@ -53,7 +54,7 @@ class Conexion
 		return null;
 
 	}
-	function ex_query($query)
+	static function ex_query($query)
 	{
 		return self::getConexion()->query($query);
 	}
