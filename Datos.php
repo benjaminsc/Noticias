@@ -17,22 +17,21 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
         $date = $entry->pubDate;
         $dateConvert=date("Y-m-d", strtotime($date));
-
-        //ELIMINAMOS LAS NOTICIAS CATEGORIAS TENDENCIAS Y OPINION, LUEGO LISTAMOS LOS DATOS
-      if($dateConvert===$currentDate){
-
-          $namespaces = $entry->getNameSpaces(true);
-            $nodo = $entry->children($namespaces['df']);
+          if($dateConvert==='2018-03-23'){
             $title = (string)$entry->title;
             $description = (string)$entry->description;
-            $link = (string)$entry->link;
             $concept = getConcept($title,$description);
+          if (!(is_null($concept))) {
+            $link = (string)$entry->link;
+            $category = getCategory($concept);
             $media = "Diario Financiero";
             $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
                            'medio'=>$media,'img'=>"",'fecha'=>$currentDate,
-                           'termino'=>$concept);
+                           'termino'=>$concept,'categoria'=>$category);
             $data[]= $list ;
-            }
+          }else{$concept="";}
+
+        }
 
       }
        echo json_encode($data); //LISTO PARA GUARDAR NOTICIA EN BD
@@ -52,20 +51,20 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
       foreach($x->channel->item as $entry) { // OBTENEMOS TODOS LOS ITEM DE RSS
         $date = $entry->pubDate;
         $dateConvert=date("Y-m-d", strtotime($date));
-
-        //FILTRAMOS LAS NOTICIAS POR FECHA ACTUAL Y QUE NO SEAN OPINIONES
       if($dateConvert === $currentDate ){
         $title = (string)$entry->title;
         $description = (string)$entry->heading;
-        $link = (string)$entry->link;
         $concept = getConcept($title,$description);
-        $media = "El Mostrador";
+        if (!(is_null($concept))) {
+          $link = (string)$entry->link;
+          $category = getCategory($concept);
+          $media = "El Mostrador";
+          $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
+          'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+          $data[]= $list ;
+        }else{$concept="";}
 
-
-            $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$link,
-            'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept);
-            $data[]= $list ;
-            }
+        }
 
       }
        echo json_encode($data);//LISTO PARA GUARDAR EN BD
@@ -86,30 +85,47 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
         $html = file_get_html($value); //OBTENEMOS EL HTML DE LA PAG
         $posts = $html->find('div[class=article-container]');// OBTENEMOS EL DIV CON LA CLASE QUE IDENTIFICA A CADA NOTICIA
         foreach ($posts as $post) {
-
           $date = $post->find('address span',1); //EXTRAEMOS LA FECHA
           if (!(empty($date))) {//VALIDAMOS SI LA FECHA EXISTE
             $date = str_replace('/','-',$date->innertext);
             $date = date('Y-m-d',strtotime($date)); //CONVERITMOS LA FECHA AL FORMATO DEASEADO
-            if ($date===$currentDate) {//VALIDAMOS QUE LA FECHA DE LA NOTICIA SEA ACTUAL Y EXTRAEMOS LOS DATOS
-              $link = $post->find('header h1 a',0);
-              $url = $link->attr['href'];
-              $title = $link->innertext;
-              $media= "El Pulso";
-              $description = ""; //ESTA NOTICIA NO TIENE DESCRIPCION PERO DEBEMOS PASARLE LA VARIABLE IGUALMENTE
-              $concept = getConcept($title,$description);
-              $list= array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
-              'img'=>"",'fecha'=>$date,'termino'=>$concept);
-              $data[] = $list;
-            }
-          }else{$date = "";}
+            if ($date==='2018-03-24') {
+              $description = $post->find('p',0);
+              if (!(empty($description))) {
+                $link = $post->find('header h1 a',0);
+                $url = $link->attr['href'];
+                $title= $link->innertext;
+                $description =$description->plaintext;
+                $concept = getConcept($title,$description);
+                if (!(is_null($concept))) {
+                  $category= getCategory($concept);
+                  $media = "El pulso";
+                  $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
+                  'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+                  $data[]= $list ;
+                }
+              }elseif(empty($description)){
+                $link = $post->find('header h1 a',0);
+                $url = $link->attr['href'];
+                $title= $link->innertext;
+                $description = "";
+                $concept = getConcept($title,$description);
+                if (!(is_null($concept))) {
+                  $category= getCategory($concept);
+                  $media = "El pulso";
+                  $list =  array('titulo'=>$title,'bajada'=>$description,'link'=>$url,
+                  'medio'=>$media,'img'=>"",'fecha'=>$currentDate,'termino'=>$concept,'categoria'=>$category);
+                  $data[]= $list ;
 
+
+                }
+              }
+            }else{$date="";}
+          }else{$date="";}
         }
-
       }
       echo json_encode($data);//LISTO PARA GUARDAR EN BD
-
-    }
+  }
 
     function Santiago(){
 
@@ -124,66 +140,43 @@ require 'Conexion_class.php'; //15-03018 NO ESTA EN USO
             foreach ($posts as $post) {
               $link = $post->find('a',0);
               $url = $link->attr['href'];
-              if ($url != "#" && !(empty($url))) {
-                $date = $post->find('a p span',0)->innertext;
+              $date = $post->find('a p span',0);
+              if ($url != "#" && !(empty($url))&&!(empty($date))) {
+                $date = $date->innertext;
                 $dateConvert = date('Y-m-d',strtotime($date));
                 if ($dateConvert===$currentDate) {
                   $title = $post->find('a h3',0)->innertext;
                   $description = "";
                   $concept = getConcept($title,$description);
-                  $media = "Bolsa de Comercio-hechosEsenciales";
-                  $list = array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
-                  'img'=>"",'fecha'=>$currentDate,'termino'=>$concept);
-                  $data[]=$list;
+                  if (!(is_null($concept))) {
+                    $media = "Bolsa de Comercio-hechosEsenciales";
+                    $category = getCategory($concept);
+                    $list = array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
+                    'img'=>"",'fecha'=>$currentDate,'termino'=>$concept);
+                    $data[]=$list;
 
+                  }
                 }
-
               }else{$url = "";}
             }
               echo json_encode($data); //LISTO PARA GUARDAR EN BD
-    }
-
-    function Emol(){
-
-//DATOS SE EXTRAEN SIN RSS -
-      date_default_timezone_set("America/Santiago");
-      $currentDate = date('Y-m-d');
-      $URL= array('http://www.pulso.cl/ultima-hora/','http://www.pulso.cl/ultima-hora/page/2/',
-      'http://www.pulso.cl/ultima-hora/page/3/', 'http://www.pulso.cl/ultima-hora/page/4/');
-
-      $data=array();//ARREGLO QUE NOS GUARDARÁ CADA LINK OBTENIDO POSTERIORMENTE
-      foreach ($URL as  $value) {
-        $html = file_get_html($value); //OBTENEMOS EL HTML DE LA PAG
-        $posts = $html->find('div[class=article-container]');// OBTENEMOS EL DIV CON LA CLASE QUE IDENTIFICA A CADA NOTICIA
-        foreach ($posts as $post) {
-
-          $date = $post->find('address span',1); //EXTRAEMOS LA FECHA
-          if (!(empty($date))) {//VALIDAMOS SI LA FECHA EXISTE
-            $date = str_replace('/','-',$date->innertext);
-            $date = date('Y-m-d',strtotime($date)); //CONVERITMOS LA FECHA AL FORMATO DEASEADO
-            if ($date===$currentDate) {//VALIDAMOS QUE LA FECHA DE LA NOTICIA SEA ACTUAL Y EXTRAEMOS LOS DATOS
-              $link = $post->find('header h1 a',0);
-              $url = $link->attr['href'];
-              $title = $link->innertext;
-              $media= "El Pulso";
-              $description = ""; //ESTA NOTICIA NO TIENE DESCRIPCION PERO DEBEMOS PASARLE LA VARIABLE IGUALMENTE
-              $concept = getConcept($title,$description);
-              $list= array('titulo'=>$title,'bajada'=>"",'link'=>$url,'medio'=>$media,
-              'img'=>"",'fecha'=>$date,'termino'=>$concept);
-              $data[] = $list;
-            }
-          }else{$date = "";}
-
-        }
-
       }
-      echo json_encode($data);//LISTO PARA GUARDAR EN BD
-
-    }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+//--------------------------- 0 ----------------------------------------------------------------------------
 function getConcept($title,$description){
   //IMPORTANTE: TERMINO HIJO PERTENCE A UN TERMINO PADRE, POR LO QUE EL HIJO TIENE UN IDPADRE
 //ENCONTRAMOS EL TERMINO DENTRO DE LA NOTICIA, YA SEA EL TERMINO PADRE O HIJO
@@ -201,8 +194,7 @@ if ($aux ===0) {//REVISAMOS EL TITULO
           }else{//SI EL VALOR PADRE NO ES NULL EL TERMINO HIJO DEBE BUSCAR AL TERMINO PADRE
 
             $query = "select nombre from terminos where idterminos=".$value->padre.";";
-            $con = new Conexion();
-            $result = $con->get_row($query);
+            $result = Conexion::get_row($query);
             return $result->nombre;//SE RETORNA EL VALOR PADRE
             break;
           }
@@ -218,8 +210,7 @@ if ($aux ===0) {//REVISAMOS EL TITULO
           return $value->nombre;
         }else{
           $query = "select nombre from terminos where idterminos=".$value->padre.";";
-          $con = new Conexion();
-          $result = $con->get_row($query);
+          $result = Conexion::get_row($query);
           return $result->nombre;
           break;
         }
@@ -228,15 +219,18 @@ if ($aux ===0) {//REVISAMOS EL TITULO
     }
   }
   if ($aux===0) {//SI AUX SIGUE EN 0 ENTONCES NO HUBIERON TERMINOS .
-    return "Sin terminos";
+    return null;
   }
 
 
 }
 
-
-
-
+function getCategory($concept){
+  $query = "select categoria from terminos where nombre='".$concept."'";
+  $result = Conexion::get_row($query);
+  return $result->categoria;
+}
+Santiago();
 
 
 
