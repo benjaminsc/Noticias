@@ -44,7 +44,7 @@ require 'Conexion_class.php';
        echo json_encode($data); //LISTO PARA GUARDAR NOTICIA EN BD
     }
 
-    function elMostrador(){//EL MOSTRADOR -- Sigue el mismo patron que el DF
+    function elMostrador(){///EL MOSTRADOR -- Sigue el mismo patron que el DF
 //ESTE METODO TIENE RSS, POR LO QUE NOS FACILITA HACER SCRAPING.
 // IMPORTANTE: EN ALGUNOS CASOS NO ENTREGA TERMINO O BAJADA YA QUE NO ESTAN EN EL RSS
 
